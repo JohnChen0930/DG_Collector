@@ -54,7 +54,7 @@ class Database:
             shoeId INTEGER NOT NULL,
             tableId INTEGER NOT NULL,
             tableName TEXT NOT NULL,
-            gameNo TEXT,
+            gameNo TEXT UNIQUE,
             playId INTEGER,
             roadLen INTEGER,
             resultRaw TEXT,
@@ -206,6 +206,23 @@ class Database:
             createdAt
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(gameNo) DO UPDATE SET
+            shoeId = excluded.shoeId,
+            tableId = excluded.tableId,
+            tableName = excluded.tableName,
+            playId = excluded.playId,
+            roadLen = excluded.roadLen,
+            resultRaw = excluded.resultRaw,
+            resultCode = excluded.resultCode,
+            side = excluded.side,
+            poker = excluded.poker,
+            winPoint = excluded.winPoint,
+            stateId = excluded.stateId,
+            dealerName = excluded.dealerName,
+            latestRoad = excluded.latestRoad,
+            onlineCount = excluded.onlineCount,
+            totalAmount = excluded.totalAmount,
+            createdAt = excluded.createdAt
         """, (
             shoe_db_id,
             table.get("tableId", 0),
