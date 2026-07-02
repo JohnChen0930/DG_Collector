@@ -1,0 +1,8 @@
+========== DG Analyzer Fixed ==========
+Total rows: 37
+Tables: 13
+Shoes(tableName+shoeId): 13
+
+B: 18 (48.65%)
+P: 17 (45.95%)
+T: 2 (5.41%)

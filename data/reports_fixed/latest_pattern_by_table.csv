@@ -1,0 +1,14 @@
+﻿tableName,latest_shoeId,bp_len_in_latest_shoe,latest_pattern_max10,recommend_pattern,recommend_length,recommend_sample,recommend_side,recommend_rate,recommend_edge,recommend_score
+RB01,1,2,PP,,0,0,PASS,0,0,0
+RB02,2,1,P,,0,0,PASS,0,0,0
+RB03,3,2,PP,,0,0,PASS,0,0,0
+RB04,4,3,BPP,,0,0,PASS,0,0,0
+RB05,5,2,BB,B,1,14,B,64.2857,28.5714,4.0
+RB06,6,3,PBP,,0,0,PASS,0,0,0
+RB07,7,3,BBB,B,1,14,B,64.2857,28.5714,4.0
+S01,8,3,PPP,,0,0,PASS,0,0,0
+S02,9,3,BBP,,0,0,PASS,0,0,0
+S03,10,3,BBP,,0,0,PASS,0,0,0
+S05,11,4,PPBB,B,1,14,B,64.2857,28.5714,4.0
+S06,12,3,BBP,,0,0,PASS,0,0,0
+S07,13,3,BBB,B,1,14,B,64.2857,28.5714,4.0

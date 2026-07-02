@@ -1,0 +1,52 @@
+2026-06-30 18:01:29,611 | INFO | DG Collector 開始收集資料
+2026-06-30 18:01:29,867 | INFO | 恢復/初始化 RB01 shoeNo=1 shoeDbId=1 roadLen=41 playId=42
+2026-06-30 18:01:30,092 | INFO | 恢復/初始化 RB02 shoeNo=1 shoeDbId=2 roadLen=25 playId=26
+2026-06-30 18:01:30,341 | INFO | 恢復/初始化 RB03 shoeNo=1 shoeDbId=3 roadLen=25 playId=26
+2026-06-30 18:01:31,052 | INFO | 恢復/初始化 RB04 shoeNo=1 shoeDbId=4 roadLen=27 playId=28
+2026-06-30 18:01:31,308 | INFO | 恢復/初始化 RB05 shoeNo=1 shoeDbId=5 roadLen=41 playId=42
+2026-06-30 18:01:31,567 | INFO | 恢復/初始化 RB06 shoeNo=1 shoeDbId=6 roadLen=8 playId=9
+2026-06-30 18:01:31,867 | INFO | 恢復/初始化 RB07 shoeNo=1 shoeDbId=7 roadLen=53 playId=54
+2026-06-30 18:01:32,117 | INFO | 恢復/初始化 S01 shoeNo=1 shoeDbId=8 roadLen=7 playId=8
+2026-06-30 18:01:32,367 | INFO | 恢復/初始化 S02 shoeNo=1 shoeDbId=9 roadLen=58 playId=59
+2026-06-30 18:01:32,608 | INFO | 恢復/初始化 S03 shoeNo=1 shoeDbId=10 roadLen=29 playId=30
+2026-06-30 18:01:32,850 | INFO | 恢復/初始化 S05 shoeNo=1 shoeDbId=11 roadLen=37 playId=38
+2026-06-30 18:01:33,108 | INFO | 恢復/初始化 S06 shoeNo=1 shoeDbId=12 roadLen=14 playId=14
+2026-06-30 18:01:33,368 | INFO | 恢復/初始化 S07 shoeNo=1 shoeDbId=13 roadLen=50 playId=51
+2026-06-30 18:01:36,541 | INFO | RESULT RB04 shoeNo=1 shoeDbId=4 resultId=1 playId=29 gameNo=202606300016R4029 result=1,2,8 code=1 side=B poker=
+2026-06-30 18:01:38,708 | INFO | RESULT RB06 shoeNo=1 shoeDbId=6 resultId=2 playId=10 gameNo=202606300018R6010 result=5,2,6 code=5 side=P poker=
+2026-06-30 18:01:40,874 | INFO | RESULT RB07 shoeNo=1 shoeDbId=7 resultId=3 playId=55 gameNo=202606300018R7055 result=3,2,7 code=3 side=B poker=
+2026-06-30 18:01:42,016 | INFO | RESULT S05 shoeNo=1 shoeDbId=11 resultId=4 playId=38 gameNo=1782813686222351 result=5,2,7 code=5 side=P poker={"banker":"0-0-0","player":"0-0-0"}
+2026-06-30 18:01:44,174 | INFO | RESULT S06 shoeNo=1 shoeDbId=12 resultId=5 playId=15 gameNo=1782813718258352 result=1,1,8 code=1 side=B poker=
+2026-06-30 18:01:45,324 | INFO | RESULT RB01 shoeNo=1 shoeDbId=1 resultId=6 playId=42 gameNo=202606300016R1042 result=7,2,7 code=7 side=P poker={"banker":"0-0-0","player":"0-0-0"}
+2026-06-30 18:01:49,507 | INFO | RESULT RB01 shoeNo=1 shoeDbId=1 resultId=7 playId=43 gameNo=202606300016R1043 result=7,2,7 code=7 side=P poker=
+2026-06-30 18:01:52,875 | INFO | RESULT S01 shoeNo=1 shoeDbId=8 resultId=8 playId=8 gameNo=1782813697031348 result=7,2,6 code=7 side=P poker=
+2026-06-30 18:01:55,048 | INFO | RESULT S05 shoeNo=1 shoeDbId=11 resultId=9 playId=39 gameNo=1782813731068351 result=5,2,7 code=5 side=P poker=
+2026-06-30 18:01:57,232 | INFO | RESULT S07 shoeNo=1 shoeDbId=13 resultId=10 playId=51 gameNo=1782813701036354 result=1,1,8 code=1 side=B poker=
+2026-06-30 18:02:00,390 | INFO | RESULT RB02 shoeNo=1 shoeDbId=2 resultId=11 playId=27 gameNo=202606300016R2027 result=5,2,6 code=5 side=P poker=
+2026-06-30 18:02:02,582 | INFO | RESULT S02 shoeNo=1 shoeDbId=9 resultId=12 playId=59 gameNo=1782813699833349 result=1,2,4 code=1 side=B poker=
+2026-06-30 18:02:04,882 | INFO | RESULT S03 shoeNo=1 shoeDbId=10 resultId=13 playId=30 gameNo=1782813705843350 result=2,1,8 code=2 side=B poker=
+2026-06-30 18:02:08,032 | INFO | RESULT RB03 shoeNo=1 shoeDbId=3 resultId=14 playId=27 gameNo=202606300016R3027 result=5,2,4 code=5 side=P poker=
+2026-06-30 18:02:10,239 | INFO | RESULT RB05 shoeNo=1 shoeDbId=5 resultId=15 playId=43 gameNo=202606300016R5043 result=1,1,8 code=1 side=B poker=
+2026-06-30 18:02:12,490 | INFO | RESULT RB06 shoeNo=1 shoeDbId=6 resultId=16 playId=11 gameNo=202606300018R6011 result=1,2,4 code=1 side=B poker=
+2026-06-30 18:02:14,614 | INFO | RESULT S01 shoeNo=1 shoeDbId=8 resultId=17 playId=9 gameNo=1782813740279348 result=7,2,6 code=7 side=P poker=
+2026-06-30 18:02:16,822 | INFO | RESULT S02 shoeNo=1 shoeDbId=9 resultId=18 playId=60 gameNo=1782813745885349 result=1,2,4 code=1 side=B poker=
+2026-06-30 18:02:18,988 | INFO | RESULT S03 shoeNo=1 shoeDbId=10 resultId=19 playId=31 gameNo=1782813746685350 result=2,1,8 code=2 side=B poker=
+2026-06-30 18:02:21,231 | INFO | RESULT S07 shoeNo=1 shoeDbId=13 resultId=20 playId=52 gameNo=1782813739479354 result=1,1,8 code=1 side=B poker=
+2026-06-30 18:02:25,038 | INFO | RESULT RB01 shoeNo=1 shoeDbId=1 resultId=21 playId=44 gameNo=202606300016R1044 result=9,1,8 code=9 side=T poker=
+2026-06-30 18:02:27,247 | INFO | RESULT RB04 shoeNo=1 shoeDbId=4 resultId=22 playId=30 gameNo=202606300016R4030 result=5,2,7 code=5 side=P poker=
+2026-06-30 18:02:29,430 | INFO | RESULT RB07 shoeNo=1 shoeDbId=7 resultId=23 playId=56 gameNo=202606300018R7056 result=1,2,5 code=1 side=B poker=
+2026-06-30 18:02:31,604 | INFO | RESULT S06 shoeNo=1 shoeDbId=12 resultId=24 playId=16 gameNo=1782813757496352 result=1,1,9 code=1 side=B poker=
+2026-06-30 18:02:34,770 | INFO | RESULT S05 shoeNo=1 shoeDbId=11 resultId=25 playId=39 gameNo=1782813731068351 result=1,2,9 code=1 side=B poker=
+2026-06-30 18:02:37,546 | INFO | RESULT S07 shoeNo=1 shoeDbId=13 resultId=26 playId=53 gameNo=1782813778322354 result=1,1,9 code=1 side=B poker=
+2026-06-30 18:02:40,712 | INFO | RESULT RB02 shoeNo=1 shoeDbId=2 resultId=27 playId=28 gameNo=202606300016R2028 result=9,2,9 code=9 side=T poker=
+2026-06-30 18:02:42,879 | INFO | RESULT RB03 shoeNo=1 shoeDbId=3 resultId=28 playId=28 gameNo=202606300016R3028 result=6,1,7 code=6 side=P poker=
+2026-06-30 18:02:45,079 | INFO | RESULT RB05 shoeNo=1 shoeDbId=5 resultId=29 playId=44 gameNo=202606300016R5044 result=1,1,8 code=1 side=B poker=
+2026-06-30 18:02:47,245 | INFO | RESULT RB06 shoeNo=1 shoeDbId=6 resultId=30 playId=12 gameNo=202606300018R6012 result=5,1,9 code=5 side=P poker=
+2026-06-30 18:02:49,446 | INFO | RESULT S01 shoeNo=1 shoeDbId=8 resultId=31 playId=10 gameNo=1782813785531348 result=5,2,4 code=5 side=P poker=
+2026-06-30 18:02:51,628 | INFO | RESULT S05 shoeNo=1 shoeDbId=11 resultId=32 playId=40 gameNo=1782813776720351 result=1,2,9 code=1 side=B poker=
+2026-06-30 18:02:54,837 | INFO | RESULT RB04 shoeNo=1 shoeDbId=4 resultId=33 playId=31 gameNo=202606300016R4031 result=5,2,7 code=5 side=P poker=
+2026-06-30 18:02:57,094 | INFO | RESULT RB07 shoeNo=1 shoeDbId=7 resultId=34 playId=57 gameNo=202606300018R7057 result=1,2,7 code=1 side=B poker=
+2026-06-30 18:02:59,329 | INFO | RESULT S02 shoeNo=1 shoeDbId=9 resultId=35 playId=60 gameNo=1782813745885349 result=5,1,9 code=5 side=P poker=
+2026-06-30 18:03:01,494 | INFO | RESULT S03 shoeNo=1 shoeDbId=10 resultId=36 playId=32 gameNo=1782813800743350 result=7,1,8 code=7 side=P poker=
+2026-06-30 18:03:03,694 | INFO | RESULT S06 shoeNo=1 shoeDbId=12 resultId=37 playId=17 gameNo=1782813799142352 result=5,2,6 code=5 side=P poker=
+2026-06-30 18:03:06,704 | INFO | 手動停止
