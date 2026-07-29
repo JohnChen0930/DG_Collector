@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+venv/
+
+# Private settings
+config.py
+.env
+
+# Collected databases
+data/*
+!data/.gitkeep
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+logs/*
+!logs/.gitkeep
+*.log
+
+# Browser data
+chrome_profile/
+browser_profile/
+
+# IDE
+.vscode/
+.idea/
+
+# Windows
+Thumbs.db
+desktop.ini

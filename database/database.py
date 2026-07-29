@@ -1,321 +1,141 @@
-import os
-import json
+from pathlib import Path
 import sqlite3
-from datetime import datetime
-
+from typing import Optional
+from collector.models import Round
 
 class Database:
-    def __init__(self, db_file):
-        self.db_file = db_file
-        db_dir = os.path.dirname(db_file)
+    def __init__(self, db_path: str = "data/history.db") -> None:
+        self.db_path = Path(db_path)
 
-        if db_dir:
-            os.makedirs(db_dir, exist_ok=True)
+        # 確保 data 資料夾存在
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
-        self.conn = sqlite3.connect(db_file)
-        self.conn.execute("PRAGMA foreign_keys = ON")
-        self.create_tables()
+        self.connection: Optional[sqlite3.Connection] = None
 
-    def now(self):
-        return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    def connect(self) -> None:
+        """連接 SQLite 資料庫。"""
+        if self.connection is not None:
+            return
 
-    def create_tables(self):
-        cur = self.conn.cursor()
+        self.connection = sqlite3.connect(self.db_path)
+        self.connection.row_factory = sqlite3.Row
 
-        cur.execute("""
-        CREATE TABLE IF NOT EXISTS tables (
-            tableId INTEGER PRIMARY KEY,
-            tableName TEXT NOT NULL,
-            gameName TEXT,
-            createdAt TEXT,
-            updatedAt TEXT
+        # 開啟外鍵約束
+        self.connection.execute("PRAGMA foreign_keys = ON")
+
+    def close(self) -> None:
+        """關閉資料庫連線。"""
+        if self.connection is None:
+            return
+
+        self.connection.close()
+        self.connection = None
+
+    def initialize(self) -> None:
+        """建立目前需要的資料表。"""
+        self.connect()
+
+        if self.connection is None:
+            raise RuntimeError("資料庫連線建立失敗")
+
+        self.connection.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS shoes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                table_name TEXT NOT NULL,
+                shoe_no TEXT NOT NULL,
+                start_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                end_time TEXT,
+
+                UNIQUE(table_name, shoe_no)
+            );
+
+            CREATE TABLE IF NOT EXISTS rounds (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                shoe_id INTEGER,
+                game_no TEXT NOT NULL UNIQUE,
+                table_name TEXT NOT NULL,
+                round_no INTEGER,
+                winner TEXT NOT NULL CHECK(winner IN ('B', 'P', 'T')),
+
+                banker_point INTEGER,
+                player_point INTEGER,
+
+                banker_cards TEXT,
+                player_cards TEXT,
+
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY(shoe_id)
+                    REFERENCES shoes(id)
+                    ON DELETE SET NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_rounds_table_name
+                ON rounds(table_name);
+
+            CREATE INDEX IF NOT EXISTS idx_rounds_shoe_id
+                ON rounds(shoe_id);
+
+            CREATE INDEX IF NOT EXISTS idx_rounds_created_at
+                ON rounds(created_at);
+            """
         )
-        """)
 
-        cur.execute("""
-        CREATE TABLE IF NOT EXISTS shoes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            tableId INTEGER NOT NULL,
-            tableName TEXT NOT NULL,
-            shoeNo INTEGER NOT NULL,
-            startTime TEXT,
-            endTime TEXT,
-            startPlayId INTEGER,
-            endPlayId INTEGER,
-            startRoadLen INTEGER,
-            endRoadLen INTEGER,
-            FOREIGN KEY(tableId) REFERENCES tables(tableId)
+        self.connection.commit()
+
+    def insert_round(self, round_data: Round) -> None:
+        if self.connection is None:
+            raise RuntimeError("Database 尚未連線")
+
+        self.connection.execute(
+            """
+            INSERT OR IGNORE INTO rounds(
+                shoe_id,
+                game_no,
+                table_name,
+                round_no,
+                winner,
+                banker_point,
+                player_point,
+                banker_cards,
+                player_cards
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                round_data.shoe_id,
+                round_data.game_no,
+                round_data.table_name,
+                round_data.round_no,
+                round_data.winner,
+                round_data.banker_point,
+                round_data.player_point,
+                round_data.banker_cards,
+                round_data.player_cards,
+            ),
         )
-        """)
 
-        cur.execute("""
-        CREATE TABLE IF NOT EXISTS results (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            shoeId INTEGER NOT NULL,
-            tableId INTEGER NOT NULL,
-            tableName TEXT NOT NULL,
-            gameNo TEXT UNIQUE,
-            playId INTEGER,
-            roadLen INTEGER,
-            resultRaw TEXT,
-            resultCode TEXT,
-            side TEXT,
-            poker TEXT,
-            winPoint INTEGER,
-            stateId INTEGER,
-            dealerName TEXT,
-            latestRoad TEXT,
-            onlineCount INTEGER,
-            totalAmount REAL,
-            createdAt TEXT,
-            FOREIGN KEY(shoeId) REFERENCES shoes(id),
-            FOREIGN KEY(tableId) REFERENCES tables(tableId)
+        self.connection.commit()
+
+    def get_rounds(self):
+
+        if self.connection is None:
+            raise RuntimeError("Database 尚未連線")
+
+        cursor = self.connection.execute(
+            """
+            SELECT *
+            FROM rounds
+            ORDER BY id
+            """
         )
-        """)
 
-        cur.execute("""
-        CREATE TABLE IF NOT EXISTS predictions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            resultId INTEGER,
-            shoeId INTEGER,
-            tableId INTEGER,
-            tableName TEXT,
-            playId INTEGER,
-            predictSide TEXT,
-            confidence REAL,
-            actualSide TEXT,
-            isWin INTEGER,
-            modelName TEXT,
-            createdAt TEXT,
-            FOREIGN KEY(resultId) REFERENCES results(id),
-            FOREIGN KEY(shoeId) REFERENCES shoes(id)
-        )
-        """)
+        return cursor.fetchall()
 
-        cur.execute("""
-        CREATE INDEX IF NOT EXISTS idx_results_table_shoe_play
-        ON results(tableName, shoeId, playId)
-        """)
+    def __enter__(self) -> "Database":
+        self.connect()
+        return self
 
-        cur.execute("""
-        CREATE INDEX IF NOT EXISTS idx_shoes_table
-        ON shoes(tableName, shoeNo)
-        """)
-
-        self.conn.commit()
-
-    def upsert_table(self, table):
-        cur = self.conn.cursor()
-
-        cur.execute("""
-        INSERT INTO tables (
-            tableId,
-            tableName,
-            gameName,
-            createdAt,
-            updatedAt
-        )
-        VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT(tableId) DO UPDATE SET
-            tableName = excluded.tableName,
-            gameName = excluded.gameName,
-            updatedAt = excluded.updatedAt
-        """, (
-            table.get("tableId", 0),
-            table.get("tableName", ""),
-            table.get("gameName", ""),
-            self.now(),
-            self.now()
-        ))
-
-        self.conn.commit()
-
-    def create_shoe(self, table, shoe_no):
-        self.upsert_table(table)
-
-        cur = self.conn.cursor()
-
-        cur.execute("""
-        INSERT INTO shoes (
-            tableId,
-            tableName,
-            shoeNo,
-            startTime,
-            startPlayId,
-            startRoadLen
-        )
-        VALUES (?, ?, ?, ?, ?, ?)
-        """, (
-            table.get("tableId", 0),
-            table.get("tableName", ""),
-            shoe_no,
-            self.now(),
-            table.get("playId", 0),
-            table.get("roadLen", 0)
-        ))
-
-        self.conn.commit()
-        return cur.lastrowid
-
-    def close_shoe(self, shoe_id, table):
-        cur = self.conn.cursor()
-
-        cur.execute("""
-        UPDATE shoes
-        SET
-            endTime = ?,
-            endPlayId = ?,
-            endRoadLen = ?
-        WHERE id = ?
-        """, (
-            self.now(),
-            table.get("playId", 0),
-            table.get("roadLen", 0),
-            shoe_id
-        ))
-
-        self.conn.commit()
-
-    def insert_result(self, table, shoe_db_id, result_code, side):
-        latest = table.get("latest")
-        latest_road = ""
-
-        if isinstance(latest, dict):
-            latest_road = json.dumps(latest.get("road", ""), ensure_ascii=False)
-
-        cur = self.conn.cursor()
-
-        cur.execute("""
-        INSERT INTO results (
-            shoeId,
-            tableId,
-            tableName,
-            gameNo,
-            playId,
-            roadLen,
-            resultRaw,
-            resultCode,
-            side,
-            poker,
-            winPoint,
-            stateId,
-            dealerName,
-            latestRoad,
-            onlineCount,
-            totalAmount,
-            createdAt
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(gameNo) DO UPDATE SET
-            shoeId = excluded.shoeId,
-            tableId = excluded.tableId,
-            tableName = excluded.tableName,
-            playId = excluded.playId,
-            roadLen = excluded.roadLen,
-            resultRaw = excluded.resultRaw,
-            resultCode = excluded.resultCode,
-            side = excluded.side,
-            poker = excluded.poker,
-            winPoint = excluded.winPoint,
-            stateId = excluded.stateId,
-            dealerName = excluded.dealerName,
-            latestRoad = excluded.latestRoad,
-            onlineCount = excluded.onlineCount,
-            totalAmount = excluded.totalAmount,
-            createdAt = excluded.createdAt
-        """, (
-            shoe_db_id,
-            table.get("tableId", 0),
-            table.get("tableName", ""),
-            table.get("gameNo", ""),
-            table.get("playId", 0),
-            table.get("roadLen", 0),
-            table.get("result", ""),
-            result_code,
-            side,
-            table.get("poker", ""),
-            table.get("winPoint", 0),
-            table.get("stateId", 0),
-            table.get("dealerName", ""),
-            latest_road,
-            table.get("onlineCount", 0),
-            table.get("totalAmount", 0),
-            self.now()
-        ))
-
-        self.conn.commit()
-        return cur.lastrowid
-    
-
-    def get_latest_shoe_by_table(self, table_id):
-        cur = self.conn.cursor()
-
-        row = cur.execute("""
-        SELECT id, shoeNo, endTime
-        FROM shoes
-        WHERE tableId = ?
-        ORDER BY id DESC
-        LIMIT 1
-        """, (table_id,)).fetchone()
-
-        if not row:
-            return None
-
-        return {
-            "shoeDbId": row[0],
-            "shoeNo": row[1],
-            "endTime": row[2],
-        }
-
-    def get_last_result_by_shoe(self, shoe_db_id):
-        cur = self.conn.cursor()
-
-        row = cur.execute("""
-        SELECT playId, roadLen, gameNo
-        FROM results
-        WHERE shoeId = ?
-        ORDER BY id DESC
-        LIMIT 1
-        """, (shoe_db_id,)).fetchone()
-
-        if not row:
-            return None
-
-        return {
-            "playId": row[0],
-            "roadLen": row[1],
-            "gameNo": row[2],
-        }
-
-    def restore_table_state(self, table):
-        table_id = table.get("tableId")
-        road_len = table.get("roadLen", 0)
-        play_id = table.get("playId", 0)
-        game_no = table.get("gameNo", "")
-
-        latest_shoe = self.get_latest_shoe_by_table(table_id)
-
-        if latest_shoe is None or latest_shoe.get("endTime") is not None:
-            shoe_no = 1 if latest_shoe is None else latest_shoe["shoeNo"] + 1
-            shoe_db_id = self.create_shoe(table, shoe_no)
-
-            return {
-                "roadLen": road_len,
-                "playId": play_id,
-                "gameNo": game_no,
-                "shoeNo": shoe_no,
-                "shoeDbId": shoe_db_id,
-            }
-
-        last_result = self.get_last_result_by_shoe(latest_shoe["shoeDbId"])
-
-        return {
-            "roadLen": road_len,
-            "playId": play_id,
-            "gameNo": game_no,
-            "shoeNo": latest_shoe["shoeNo"],
-            "shoeDbId": latest_shoe["shoeDbId"],
-        }
-
-    def close(self):
-        self.conn.close()
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        self.close()
