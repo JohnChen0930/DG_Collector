@@ -192,8 +192,7 @@ def main():
 
     login_and_open_dg()
 
-    if not switch_to_laya_frame():
-        raise Exception("找不到 Laya iframe")
+    self.browser.switch_to_laya_frame()
 
     if not wait_laya_ready():
         raise Exception("Laya 資料沒有載入完成")
