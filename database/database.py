@@ -84,39 +84,58 @@ class Database:
 
         self.connection.commit()
 
-    def insert_round(self, round_data: Round) -> None:
+    def insert_round(self, round_data: Round) -> bool:
         if self.connection is None:
             raise RuntimeError("Database 尚未連線")
 
-        self.connection.execute(
-            """
-            INSERT OR IGNORE INTO rounds(
-                shoe_id,
-                game_no,
-                table_name,
-                round_no,
-                winner,
-                banker_point,
-                player_point,
-                banker_cards,
-                player_cards
+        try:
+            self.connection.execute(
+                """
+                INSERT INTO rounds(
+                    shoe_id,
+                    game_no,
+                    table_name,
+                    round_no,
+                    winner,
+                    banker_point,
+                    player_point,
+                    banker_cards,
+                    player_cards
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    round_data.shoe_id,
+                    round_data.game_no,
+                    round_data.table_name,
+                    round_data.round_no,
+                    round_data.winner,
+                    round_data.banker_point,
+                    round_data.player_point,
+                    round_data.banker_cards,
+                    round_data.player_cards,
+                ),
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                round_data.shoe_id,
-                round_data.game_no,
-                round_data.table_name,
-                round_data.round_no,
-                round_data.winner,
-                round_data.banker_point,
-                round_data.player_point,
-                round_data.banker_cards,
-                round_data.player_cards,
-            ),
-        )
 
-        self.connection.commit()
+            self.connection.commit()
+            return True
+
+        except sqlite3.IntegrityError as error:
+            error_text = str(error)
+
+            if "UNIQUE constraint failed: rounds.game_no" in error_text:
+                return False
+
+            logger.error(
+                "Database INSERT 限制錯誤："
+                f"error={error} "
+                f"table={round_data.table_name} "
+                f"gameNo={round_data.game_no} "
+                f"winner={round_data.winner} "
+                f"roundNo={round_data.round_no}"
+            )
+
+            raise
 
     def get_rounds(self):
 

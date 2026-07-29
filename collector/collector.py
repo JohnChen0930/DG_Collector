@@ -1,7 +1,7 @@
 import time
-from models.round import Round
 from collector.parser import is_baccarat_table, result_to_side
 from utils.logger import logger
+from collector.models import Round
 
 
 class DGCollector:
@@ -18,27 +18,41 @@ class DGCollector:
         self.poll_interval = poll_interval
         self.last_state = {}
 
+        # 避免同一個跳號警告每秒重複顯示
+        self.gap_warnings = set()
+
     def start(self):
-        """啟動 DG 資料收集器。"""
         self.browser.login_and_open_dg()
 
         self.browser.switch_to_laya_frame()
 
         if not self.browser.wait_laya_ready(60):
-            raise RuntimeError("Laya 資料沒有載入完成")
+            raise Exception("Laya 資料沒有載入完成")
 
         logger.info("DG Collector 開始收集資料")
 
-        try:
-            while True:
+        while True:
+            try:
                 self.collect_once()
                 time.sleep(self.poll_interval)
 
-        except KeyboardInterrupt:
-            logger.info("使用者停止 Collector")
+            except KeyboardInterrupt:
+                logger.info("手動停止")
+                break
 
-        finally:
-            self.browser.quit()
+            except Exception as e:
+                logger.exception(f"Collector 錯誤: {e}")
+
+                try:
+                    self.browser.switch_to_laya_frame()
+
+                    if not self.browser.wait_laya_ready(60):
+                        logger.error("重新切換 iframe 後，Laya 仍未載入完成")
+
+                except Exception as e2:
+                    logger.exception(f"重新切 iframe 失敗: {e2}")
+
+                time.sleep(2)
 
     def collect_once(self):
         """取得一次所有桌台資料並逐桌處理。"""
@@ -107,8 +121,44 @@ class DGCollector:
                 f"playId={old_play_id}->{play_id}"
             )
 
+            self.gap_warnings = {
+                item
+                for item in self.gap_warnings
+                if item[0] != table_id
+            }
+
             self.last_state[table_id] = current_state
             return
+
+        # 即時檢查是否可能漏局
+        road_gap = road_len - old_road_len
+        play_gap = play_id - old_play_id
+
+        gap_key = (
+            table_id,
+            old_road_len,
+            road_len,
+            old_play_id,
+            play_id,
+        )
+
+        if road_gap > 1 or play_gap > 1:
+            if gap_key not in self.gap_warnings:
+                self.gap_warnings.add(gap_key)
+
+                suspected_missing = max(
+                    road_gap - 1,
+                    play_gap - 1,
+                )
+
+                logger.warning(
+                    f"POSSIBLE_MISSING {table_name} "
+                    f"roadLen={old_road_len}->{road_len} "
+                    f"playId={old_play_id}->{play_id} "
+                    f"疑似漏掉={suspected_missing}局 "
+                    f"oldGameNo={old_game_no} "
+                    f"newGameNo={game_no}"
+                )
 
         is_new_result = (
             road_len > old_road_len
@@ -133,6 +183,12 @@ class DGCollector:
 
         winner = result_to_side(result)
 
+        logger.info(
+            f"PARSED_RESULT {table_name} "
+            f"result={result} "
+            f"winner={winner}"
+        )
+
         if not winner or winner.startswith("UNKNOWN"):
             logger.warning(
                 f"UNKNOWN_RESULT {table_name} "
@@ -142,9 +198,29 @@ class DGCollector:
             )
             return
 
+        winner_map = {
+            "莊": "B",
+            "閒": "P",
+            "和": "T",
+            "B": "B",
+            "P": "P",
+            "T": "T",
+        }
+
+        db_winner = winner_map.get(winner)
+
+        if db_winner is None:
+            logger.warning(
+                f"UNKNOWN_WINNER {table_name} "
+                f"winner={winner} "
+                f"result={result} "
+                f"gameNo={game_no}"
+            )
+            return
+
         round_data = self.create_round(
             table=table,
-            winner=winner,
+            winner=db_winner,
         )
 
         inserted = self.database.insert_round(round_data)
@@ -154,7 +230,7 @@ class DGCollector:
                 f"INSERT {table_name} "
                 f"gameNo={game_no} "
                 f"roundNo={play_id} "
-                f"winner={winner} "
+                f"winner={db_winner} "
                 f"result={result}"
             )
         else:
@@ -175,7 +251,7 @@ class DGCollector:
         banker_point, player_point = self.parse_win_point(win_point)
 
         return Round(
-            shoe_id=self.build_shoe_id(table),
+            shoe_id=None,
             game_no=str(table.get("gameNo", "")),
             table_name=table.get("tableName", ""),
             round_no=int(table.get("playId", 0) or 0),
