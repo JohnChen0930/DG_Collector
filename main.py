@@ -1,22 +1,27 @@
-from database import Database
+from collector.browser import DGBrowser
 
 
 def main() -> None:
-    print("DG Collector 啟動中...")
-
-    database = Database("data/history.db")
+    browser = DGBrowser()
 
     try:
-        database.initialize()
-        print("資料庫初始化成功")
-        print(f"資料庫位置：{database.db_path.resolve()}")
+        browser.start()
+        browser.open_homepage()
+        browser.enter_dg()
+
+        input("確認 DG 大廳載入完成後，按 Enter 讀取資料...")
+
+        result = browser.get_game_data()
+        print(result)
+
+        input("按 Enter 關閉瀏覽器...")
 
     except Exception as error:
-        print(f"資料庫初始化失敗：{error}")
+        print(f"[Main] 執行失敗：{error}")
         raise
 
     finally:
-        database.close()
+        browser.close()
 
 
 if __name__ == "__main__":

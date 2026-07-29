@@ -1,7 +1,7 @@
 from pathlib import Path
 import sqlite3
 from typing import Optional
-
+from collector.models import Round
 
 class Database:
     def __init__(self, db_path: str = "data/history.db") -> None:
@@ -83,6 +83,55 @@ class Database:
         )
 
         self.connection.commit()
+
+    def insert_round(self, round_data: Round) -> None:
+        if self.connection is None:
+            raise RuntimeError("Database 尚未連線")
+
+        self.connection.execute(
+            """
+            INSERT OR IGNORE INTO rounds(
+                shoe_id,
+                game_no,
+                table_name,
+                round_no,
+                winner,
+                banker_point,
+                player_point,
+                banker_cards,
+                player_cards
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                round_data.shoe_id,
+                round_data.game_no,
+                round_data.table_name,
+                round_data.round_no,
+                round_data.winner,
+                round_data.banker_point,
+                round_data.player_point,
+                round_data.banker_cards,
+                round_data.player_cards,
+            ),
+        )
+
+        self.connection.commit()
+
+    def get_rounds(self):
+
+        if self.connection is None:
+            raise RuntimeError("Database 尚未連線")
+
+        cursor = self.connection.execute(
+            """
+            SELECT *
+            FROM rounds
+            ORDER BY id
+            """
+        )
+
+        return cursor.fetchall()
 
     def __enter__(self) -> "Database":
         self.connect()
