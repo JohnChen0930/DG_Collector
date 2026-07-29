@@ -1,17 +1,16 @@
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
 
 # Virtual environment
 .venv/
 venv/
 
-# Private configuration
+# Private settings
 config.py
 .env
 
-# Database and collected data
+# Collected databases
 data/*
 !data/.gitkeep
 *.db
@@ -23,10 +22,14 @@ logs/*
 !logs/.gitkeep
 *.log
 
+# Browser data
+chrome_profile/
+browser_profile/
+
 # IDE
 .vscode/
 .idea/
 
-# System
-.DS_Store
+# Windows
 Thumbs.db
+desktop.ini
