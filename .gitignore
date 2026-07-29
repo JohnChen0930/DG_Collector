@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+.venv/
+venv/
+
+# Private configuration
+config.py
+.env
+
+# Database and collected data
+data/*
+!data/.gitkeep
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+logs/*
+!logs/.gitkeep
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# System
+.DS_Store
+Thumbs.db
