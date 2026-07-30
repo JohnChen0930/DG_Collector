@@ -1,5 +1,6 @@
 # Python
 __pycache__/
+*.pyc
 *.py[cod]
 
 # Virtual environment
@@ -21,6 +22,10 @@ data/*
 logs/*
 !logs/.gitkeep
 *.log
+
+data/*.db
+data/*.db-shm
+data/*.db-wal
 
 # Browser data
 chrome_profile/
