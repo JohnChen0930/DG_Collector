@@ -2,7 +2,7 @@ import time
 from collector.parser import is_baccarat_table, result_to_side
 from utils.logger import logger
 from collector.models import Round
-
+from utils.status import StatusManager
 
 class DGCollector:
     def __init__(
@@ -17,6 +17,7 @@ class DGCollector:
         self.exclude_tables = exclude_tables or []
         self.poll_interval = poll_interval
         self.last_state = {}
+        self.status = StatusManager()
 
         # 避免同一個跳號警告每秒重複顯示
         self.gap_warnings = set()
@@ -232,6 +233,12 @@ class DGCollector:
                 f"roundNo={play_id} "
                 f"winner={db_winner} "
                 f"result={result}"
+            )
+
+            self.status.update(
+                table_name=table_name,
+                game_no=game_no,
+                winner=db_winner,
             )
         else:
             logger.info(

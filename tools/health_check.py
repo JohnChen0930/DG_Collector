@@ -1,7 +1,8 @@
 import sqlite3
 import sys
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timedelta
+import json
 from pathlib import Path
 
 
@@ -10,6 +11,7 @@ from pathlib import Path
 # parents[1] 就是 DG_Collector
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DB_PATH = PROJECT_ROOT / "data" / "history.db"
+STATUS_PATH = PROJECT_ROOT / "data" / "status.json"
 
 VALID_WINNERS = {"B", "P", "T"}
 
@@ -140,104 +142,129 @@ def get_winner_counts(
 
 
 def get_table_statistics(
-    connection: sqlite3.Connection,
-) -> list[sqlite3.Row]:
-    return connection.execute(
-        """
-        SELECT
-            table_name,
-            COUNT(*) AS total,
-            SUM(CASE WHEN winner = 'B' THEN 1 ELSE 0 END) AS banker_count,
-            SUM(CASE WHEN winner = 'P' THEN 1 ELSE 0 END) AS player_count,
-            SUM(CASE WHEN winner = 'T' THEN 1 ELSE 0 END) AS tie_count,
-            MAX(id) AS latest_id
-        FROM rounds
-        GROUP BY table_name
-        ORDER BY table_name
-        """
-    ).fetchall()
+        connection: sqlite3.Connection,
+    ) -> list[sqlite3.Row]:
+        return connection.execute(
+            """
+            SELECT
+                table_name,
+                COUNT(*) AS total,
+                SUM(CASE WHEN winner = 'B' THEN 1 ELSE 0 END) AS banker_count,
+                SUM(CASE WHEN winner = 'P' THEN 1 ELSE 0 END) AS player_count,
+                SUM(CASE WHEN winner = 'T' THEN 1 ELSE 0 END) AS tie_count,
+                MAX(id) AS latest_id
+            FROM rounds
+            GROUP BY table_name
+            ORDER BY table_name
+            """
+        ).fetchall()
 
+def get_table_last_update(
+        connection: sqlite3.Connection,
+    ) -> list[sqlite3.Row]:
+        return connection.execute(
+            """
+            SELECT
+                table_name,
+                datetime(MAX(created_at), 'localtime') AS last_update
+            FROM rounds
+            GROUP BY table_name
+            """
+        ).fetchall()
 
 def get_latest_rounds(
-    connection: sqlite3.Connection,
-    limit: int = 10,
-) -> list[sqlite3.Row]:
-    return connection.execute(
-        """
-        SELECT
-            id,
-            table_name,
-            game_no,
-            round_no,
-            winner
-        FROM rounds
-        ORDER BY id DESC
-        LIMIT ?
-        """,
-        (limit,),
-    ).fetchall()
+        connection: sqlite3.Connection,
+        limit: int = 10,
+    ) -> list[sqlite3.Row]:
+        return connection.execute(
+            """
+            SELECT
+                id,
+                table_name,
+                game_no,
+                round_no,
+                winner
+            FROM rounds
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
 
 
 def get_optional_missing_counts(
-    connection: sqlite3.Connection,
-    columns: set[str],
-) -> dict[str, int]:
-    optional_fields = [
-        "round_no",
-        "banker_point",
-        "player_point",
-        "banker_cards",
-        "player_cards",
-    ]
+        connection: sqlite3.Connection,
+        columns: set[str],
+    ) -> dict[str, int]:
+        optional_fields = [
+            "round_no",
+            "banker_point",
+            "player_point",
+            "banker_cards",
+            "player_cards",
+        ]
 
-    result: dict[str, int] = {}
+        result: dict[str, int] = {}
 
-    for field_name in optional_fields:
-        if field_name not in columns:
-            continue
+        for field_name in optional_fields:
+            if field_name not in columns:
+                continue
 
-        count = connection.execute(
-            f"""
-            SELECT COUNT(*)
-            FROM rounds
-            WHERE {field_name} IS NULL
-               OR CAST({field_name} AS TEXT) = ''
-            """
-        ).fetchone()[0]
+            count = connection.execute(
+                f"""
+                SELECT COUNT(*)
+                FROM rounds
+                WHERE {field_name} IS NULL
+                OR CAST({field_name} AS TEXT) = ''
+                """
+            ).fetchone()[0]
 
-        result[field_name] = count
+            result[field_name] = count
 
-    return result
+        return result
+
+def get_collector_status():
+    if not STATUS_PATH.exists():
+        return None
+
+    try:
+        return json.loads(
+            STATUS_PATH.read_text(
+                encoding="utf-8"
+            )
+        )
+    except Exception:
+        return None
 
 
 def print_winner_statistics(
-    winner_rows: list[sqlite3.Row],
-    total_rows: int,
-) -> None:
-    winner_counts = Counter()
+        winner_rows: list[sqlite3.Row],
+        total_rows: int,
+    ) -> None:
+        winner_counts = Counter()
 
-    for row in winner_rows:
-        winner_counts[row["winner"]] = row["total"]
+        for row in winner_rows:
+            winner_counts[row["winner"]] = row["total"]
 
-    winner_names = {
-        "B": "莊",
-        "P": "閒",
-        "T": "和",
-    }
+        winner_names = {
+            "B": "莊",
+            "P": "閒",
+            "T": "和",
+        }
 
-    for winner in ("B", "P", "T"):
-        count = winner_counts.get(winner, 0)
+        for winner in ("B", "P", "T"):
+            count = winner_counts.get(winner, 0)
 
-        if total_rows > 0:
-            percentage = count / total_rows * 100
-        else:
-            percentage = 0
+            if total_rows > 0:
+                percentage = count / total_rows * 100
+            else:
+                percentage = 0
 
-        print(
-            f"{winner_names[winner]} ({winner})："
-            f"{count:,} 局 "
-            f"({percentage:.2f}%)"
-        )
+            print(
+                f"{winner_names[winner]} ({winner})："
+                f"{count:,} 局 "
+                f"({percentage:.2f}%)"
+            )
 
 
 def main() -> int:
@@ -292,11 +319,43 @@ def main() -> int:
         invalid_winner_rows = check_invalid_winners(connection)
         winner_rows = get_winner_counts(connection)
         table_rows = get_table_statistics(connection)
+        table_update_rows = get_table_last_update(connection)
         latest_rows = get_latest_rounds(connection)
         optional_missing = get_optional_missing_counts(
             connection,
             columns,
         )
+
+        collector_status = get_collector_status()
+
+        print_section("Collector 狀態")
+
+        if collector_status is None:
+
+            print("[WARNING] 找不到 status.json")
+
+        else:
+
+            last_update = datetime.strptime(
+                collector_status["last_update"],
+                "%Y-%m-%d %H:%M:%S",
+            )
+
+            age = datetime.now() - last_update
+
+            if age.total_seconds() < 300:
+                state = "🟢 RUNNING"
+                status = "PASS"
+            else:
+                state = "🔴 STOPPED"
+                status = "WARNING"
+
+            print(f"[{status}] Collector：{state}")
+            print(f"最後更新：{collector_status['last_update']}")
+            print(f"最後桌台：{collector_status['table_name']}")
+            print(f"最後局號：{collector_status['game_no']}")
+            print(f"最後結果：{collector_status['winner']}")
+            print(f"距現在：{int(age.total_seconds())} 秒")
 
         print_section("基本資料")
 
@@ -309,6 +368,40 @@ def main() -> int:
         print_winner_statistics(winner_rows, total_rows)
 
         print_section("各桌資料量")
+
+        print_section("各桌最後更新")
+
+        now = datetime.now()
+
+        for row in table_update_rows:
+
+            last = datetime.strptime(
+                row["last_update"],
+                "%Y-%m-%d %H:%M:%S"
+            )
+
+            seconds = int((now - last).total_seconds())
+
+            if seconds < 60:
+                age = f"{seconds} 秒"
+
+            elif seconds < 3600:
+                age = f"{seconds // 60} 分"
+
+            else:
+                age = f"{seconds // 3600} 小時"
+
+            if seconds > 600:
+                state = "⚠"
+
+            else:
+                state = " "
+
+            print(
+                f"{row['table_name']:<6}"
+                f"{age:>8}"
+                f" {state}"
+            )
 
         if not table_rows:
             print("目前沒有任何資料")
